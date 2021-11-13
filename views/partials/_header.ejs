@@ -23,17 +23,17 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-    <% if(username) { %>
+    <% if(user) { %>
       <form action="/logout" method="POST">
-        <p><%= username %></p>
+        <p><%= user.email %></p>
         <button type="submit" class="btn btn-primary">LOGOUT</button>
       </form>
       <% } else { %>
       
-    <form action="/login" method="POST">
-      <input class = "form-control round" placeholder="Username"  type="text"  name="username" style="width: 200px; margin: 0.2em; margin-right: 10px"></input>
-      <input type="submit" class="btn btn-primary" value="LogIn" />
-    </form>
+    
+        <a href="/login" type="submit" class="btn btn-primary">Login</a>
+        <a href="/register" type="submit" class="btn btn-primary">Register</a>
+    
     <% } %>
     
     
