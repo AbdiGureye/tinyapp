@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; 
 const cookieParser = require("cookie-parser")
+const bcrypt = require('bcryptjs');
 app.use(cookieParser());
 app.set("view engine", "ejs");
 
@@ -57,6 +58,19 @@ const findUserByEmail = function(usersObj, email) {
   return undefined;
 }
 
+const urlsForUser = function(id) {
+  const userURLS = {}
+  for(let shortURL in urlDatabase) {
+    if(id === urlDatabase[shortURL].userID) {
+      userURLS[shortURL] = {
+        longURL: urlDatabase[shortURL].longURL,
+        userID: id
+      }
+    }
+  }
+  return userURLS
+}
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -78,8 +92,9 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls", (req, res) => {
   const id = req.cookies["user_id"];
   const user = users[id]
+  const userURLS = urlsForUser(id)
 
-  const templateVars = { urls: urlDatabase, user };
+  const templateVars = { urls: userURLS, user };
   res.render("urls_index", templateVars);
 });
 app.get("/urls/:shortURL", (req, res) => {
@@ -103,9 +118,15 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);         // Respond with 'Ok' (we will replace this)
 });
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete(urlDatabase[req.params.shortURL])
-  urlDatabase[shortURL].longURL = req.body.longURL
-res.redirect("/urls")
+  const id = req.cookies["user_id"]
+  if(id && id === urlDatabase[req.params.shortURL].userID) {
+    delete(urlDatabase[req.params.shortURL])
+    urlDatabase[shortURL].longURL = req.body.longURL
+    res.redirect("/urls")
+  } else {
+    res.status(404).send("You have no access to delete this url")
+  }
+  
 });
 app.post("/urls/:shortURL/edit", (req, res) => {
   //console.log(req.body)
@@ -130,7 +151,7 @@ app.post("/login", (req, res) => {
   const user = findUserByEmail(users, email);
   const id = user.id
   console.log(user)
-  if(user && req.body.password === user.password) {
+  if(user && bcrypt.compareSync(req.body.password, user.password)) {
     res.cookie("user_id", id)
 res.redirect("/urls")
   } else {
@@ -153,7 +174,7 @@ app.post("/register", (req,res) => {
   const user = {
     id: id,
     email: req.body.email,
-    password: req.body.password
+    password: bcrypt.hashSync(req.body.password, 10)
   }
   if(req.body.email === "" || req.body.password === ""){
     res.status(400).send("Please leave no fields blank")
