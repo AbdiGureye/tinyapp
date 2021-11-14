@@ -81,8 +81,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
 // renders urls_index template
 app.get("/urls", (req, res) => {
-  // req.session.user_id = 10
-  console.log(req.session.user_id)
+  
   const id = req.session.user_id;
   console.log("id from urls get route",id)
   const user = users[id]
@@ -91,7 +90,7 @@ app.get("/urls", (req, res) => {
   const templateVars = { urls: userURLS, user };
   res.render("urls_index", templateVars);
 });
-
+// redirects to the longURL
 app.get('/u/:shortURL', (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
     res.redirect(urlDatabase[req.params.shortURL].longURL);
@@ -116,6 +115,7 @@ app.post("/urls", (req, res) => {
 // resposible for deleting the specified short url (form in urls_index)
 app.post("/urls/:shortURL/delete", (req, res) => {
   const id = req.session.user_id;
+  // checks if user has permission to delete url
   if(id && id === urlDatabase[req.params.shortURL].userID) {
     delete(urlDatabase[req.params.shortURL])
     urlDatabase[shortURL].longURL = req.body.longURL
@@ -125,29 +125,37 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
   
 });
+// resposible for editing the specified short url (form in urls_show)
 app.post("/urls/:shortURL/edit", (req, res) => {
+  const id = req.session.user_id
   //console.log(req.body)
  // console.log(req.params)
   const shortURL = req.params.shortURL
   //console.log(urlDatabase)
+  if(id && id === urlDatabase[req.params.shortURL].userID) {
   urlDatabase[shortURL] = req.body.longURL
   //console.log(urlDatabase[shortURL])
   //console.log(urlDatabase)
-
   res.redirect("/urls")
+} else {
+  res.status(404).send("You have no access to edit this url")
+}
 })
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+//renders login template
 app.get("/login", (req, res) => {
   templateVars = { user: null}
   res.render("urls_login", templateVars)
 })
+//sets id to session and logs user in 
 app.post("/login", (req, res) => {
   const email = req.body.email
+  // helper function to find if email is in database
   const user = findUserByEmail(users, email);
   const id = user.id
-  console.log(user)
+  // checks if password matches the email and if user exists
   if(user && bcrypt.compareSync(req.body.password, user.password)) {
     req.session.user_id =  id
 res.redirect("/urls")
