@@ -1,10 +1,9 @@
 const findUserinUsers = function(userInput, usersDB) {
   for(let user in usersDB) {
     if(userInput.email === usersDB[user].email) {
-      return true;
-    }
-    if(userInput.password === usersDB[user].password) {
-      return true;
+      if(userInput.password === usersDB[user].password) {
+        return true;
+      }
     }
   }
   return null;
@@ -12,7 +11,7 @@ const findUserinUsers = function(userInput, usersDB) {
 
 const findUserByEmail = function(usersObj, email) {
   for(let user in usersObj) {
-    if(email === users[user].email) {
+    if(email === usersObj[user].email) {
       
         return usersObj[user];
     }
