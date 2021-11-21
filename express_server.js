@@ -48,7 +48,7 @@ const users = {
 
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect('/urls');
 });
 //shows current database
 app.get("/urls.json", (req, res) => {
@@ -76,7 +76,11 @@ app.get("/urls/:shortURL", (req, res) => {
   if (!urlDatabase[req.params.shortURL]) {
     res.send("short url does not exist");
   }
-  res.render("urls_show", templateVars);
+  if (id && id === urlDatabase[req.params.shortURL].userID) {
+    res.render("urls_show", templateVars);
+  }
+  res.send('YOU DO NOT HAVE THE RIGHTS TO ACCESS THIS PAGE')
+  
 });
 
 // renders urls_index template
@@ -88,6 +92,9 @@ app.get("/urls", (req, res) => {
   const userURLS = urlsForUser(id, urlDatabase);
 
   const templateVars = { urls: userURLS, user };
+  if(!user){
+    res.redirect('/login')
+  }
   res.render("urls_index", templateVars);
 });
 // redirects to the longURL
