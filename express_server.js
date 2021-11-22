@@ -92,7 +92,9 @@ app.get("/urls", (req, res) => {
   const userURLS = urlsForUser(id, urlDatabase);
 
   const templateVars = { urls: userURLS, user };
-  if(!user){
+  if(!id){
+    res.statusCode = 401;
+    // console.log('Please sign in or register!')
     res.redirect('/login')
   }
   res.render("urls_index", templateVars);
@@ -100,9 +102,16 @@ app.get("/urls", (req, res) => {
 // redirects to the longURL
 app.get('/u/:shortURL', (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
-    res.redirect(urlDatabase[req.params.shortURL].longURL);
-  } else {
-    res.send("This url isnt in the database");
+    if(req.secure){
+      res.redirect(urlDatabase[req.params.shortURL].longURL);
+
+    }
+  } 
+  if (urlDatabase[req.params.shortURL]){
+  res.redirect('https://' + urlDatabase[req.params.shortURL].longURL)
+}
+  else {
+    res.send("Permission denied! Please login or register!");
   }
 });
 
@@ -122,16 +131,14 @@ app.post("/urls", (req, res) => {
 // resposible for deleting the specified short url (form in urls_index)
 app.post("/urls/:shortURL/delete", (req, res) => {
   const id = req.session.user_id;
+  const shortURL = req.params.shortURL;
   // checks if user has permission to delete url
-  if (id && id === urlDatabase[req.params.shortURL].userID) {
-    delete(urlDatabase[req.params.shortURL]);
-    urlDatabase[req.params.shortURL].longURL = req.body.longURL;
+ if(id === urlDatabase[shortURL].userID) {
+   delete urlDatabase[shortURL]
     res.redirect("/urls");
-  } else {
-    res.status(404).send("You have no access to delete this url");
+  } 
   }
-  
-});
+);
 // resposible for editing the specified short url (form in urls_show)
 app.post("/urls/:shortURL/edit", (req, res) => {
   const id = req.session.user_id;
@@ -139,14 +146,15 @@ app.post("/urls/:shortURL/edit", (req, res) => {
   // console.log(req.params)
   const shortURL = req.params.shortURL;
   //console.log(urlDatabase)
-  if (id && id === urlDatabase[req.params.shortURL].userID) {
-    urlDatabase[shortURL] = req.body.longURL;
-    //console.log(urlDatabase[shortURL])
+  if (id === urlDatabase[shortURL].userID) {
+    urlDatabase[shortURL].longURL = req.body.longURL;
+    console.log(urlDatabase[shortURL])
     //console.log(urlDatabase)
     res.redirect("/urls");
-  } else {
-    res.status(404).send("You have no access to edit this url");
-  }
+  } 
+  // else {
+    // res.status(404).send("You have no access to edit this url");
+  // }
 });
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -173,8 +181,9 @@ app.post("/login", (req, res) => {
 });
 app.post("/logout", (req, res) => {
   req.session.user_id = null;
-  
-  res.redirect("/urls");
+    res.redirect("/urls");
+
+
 });
 
 app.get("/register", (req,res) => {
