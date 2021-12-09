@@ -102,14 +102,14 @@ app.get("/urls", (req, res) => {
 // redirects to the longURL
 app.get('/u/:shortURL', (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
-    if(req.secure){
-      res.redirect(urlDatabase[req.params.shortURL].longURL);
-
+    const longURL = urlDatabase[req.params.shortURL].longURL
+    if (longURL.includes ('http')){
+      res.redirect(longURL);
+    } else {
+      res.redirect('https://' + longURL)
     }
-  } 
-  if (urlDatabase[req.params.shortURL]){
-  res.redirect('https://' + urlDatabase[req.params.shortURL].longURL)
-}
+    
+} 
   else {
     res.send("Permission denied! Please login or register!");
   }
@@ -180,7 +180,7 @@ app.post("/login", (req, res) => {
   }
 });
 app.post("/logout", (req, res) => {
-  req.session.user_id = null;
+  req.session = null;
     res.redirect("/urls");
 
 
@@ -191,28 +191,25 @@ app.get("/register", (req,res) => {
   res.render("urls_registration", templateVars);
 });
 
-app.post("/register", (req,res) => {
-  const id = generateRandomString();
-  const user = {
-    id: id,
-    email: req.body.email,
-    password: bcrypt.hashSync(req.body.password, 10)
-  };
-  if (req.body.email === "" || req.body.password === "") {
-    res.status(400).send("Please leave no fields blank");
-  }
 
-  if (findUserinUsers(user,users)) {
-    res.status(400).send("Credentials are taken");
-  }
-
+app.post('/register', (req, res) => {
+  if (req.body.email && req.body.password) {
+    if (!findUserByEmail(users, req.body.email)) {
+      const id = generateRandomString();
+      const user = {
+        id: id,
+        email: req.body.email,
+        password: bcrypt.hashSync(req.body.password, 10)
+      }; 
+         users[id] = user;
+      req.session.user_id = id;
+      res.redirect('/urls');
+    } else {
+      res.send('Please enter new login credentials.');
+      res.redirect('/urls')
+    }} else {
+      res.send('Please enter a valid login credential');
+  }}
+  )
   
-  users[id] = user;
-  //  console.log(id)
-  req.session.user_id = id;
-  // console.log("req.session.user_id", req.session.user_id)
   
-  res.redirect("/urls");
-});
-
-
